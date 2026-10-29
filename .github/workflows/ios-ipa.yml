@@ -1,0 +1,46 @@
+name: Build iPhone IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: xcodegen generate
+
+      - name: Build for iPhone
+        run: |
+          xcodebuild \
+            -project DanmoeumKeyboard.xcodeproj \
+            -scheme DanmoeumKeyboard \
+            -configuration Debug \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -R \
+            "$RUNNER_TEMP/DerivedData/Build/Products/Debug-iphoneos/DanmoeumKeyboard.app" \
+            Payload/
+
+          zip -qry DanmoeumKeyboard-unsigned.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: DanmoeumKeyboard-IPA
+          path: DanmoeumKeyboard-unsigned.ipa
+          retention-days: 7
