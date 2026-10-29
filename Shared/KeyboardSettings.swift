@@ -23,6 +23,7 @@ struct KeyboardSettings: Codable {
     var compactLayout: Bool? = true
     var doubleTapWindow: Double? = 0.35
     var modernAppearance: Bool? = true
+    var appearanceRevision: Int? = 1
 }
 
 enum SettingsStore {
@@ -35,7 +36,16 @@ enum SettingsStore {
     static var defaults: UserDefaults { shared ?? .standard }
     static func load() -> KeyboardSettings {
         guard let data = defaults.data(forKey: "keyboard.settings.v1"),
-              let value = try? JSONDecoder().decode(KeyboardSettings.self, from: data) else { return KeyboardSettings() }
+              var value = try? JSONDecoder().decode(KeyboardSettings.self, from: data) else {
+            var initial = KeyboardSettings()
+            initial.radius = 8; initial.gap = 5; initial.rowGap = 9; initial.margin = 8
+            return initial
+        }
+        if value.appearanceRevision == nil {
+            if value.radius == 5 { value.radius = 8 }
+            value.appearanceRevision = 1
+            save(value)
+        }
         return value
     }
     static func save(_ value: KeyboardSettings) {
@@ -86,7 +96,7 @@ struct KeyboardSettingsView: View {
                 Toggle("숫자 행", isOn: $settings.numberRow)
             }
             Section("디자인과 피드백") {
-                Toggle("모던 iOS 스타일", isOn: Binding(
+                Toggle("사진 스타일 · 흰색 둥근 키", isOn: Binding(
                     get: { settings.modernAppearance ?? true }, set: { settings.modernAppearance = $0 }
                 ))
                 Toggle("굵은 글씨", isOn: $settings.bold)

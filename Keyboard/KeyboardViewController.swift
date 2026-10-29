@@ -77,15 +77,7 @@ final class KeyboardViewController: UIInputViewController {
         backgroundMaterial = nil
         view.backgroundColor = UIColor { $0.userInterfaceStyle == .dark ? UIColor(white: 0.16, alpha: 1) : UIColor(red: 0.82, green: 0.84, blue: 0.88, alpha: 1) }
         if preferences.modernAppearance ?? true {
-            view.backgroundColor = .systemGroupedBackground
-            if !UIAccessibility.isReduceTransparencyEnabled {
-                let material = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
-                material.frame = view.bounds
-                material.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-                material.isUserInteractionEnabled = false
-                view.insertSubview(material, at: 0)
-                backgroundMaterial = material
-            }
+            view.backgroundColor = UIColor { $0.userInterfaceStyle == .dark ? UIColor(white: 0.12, alpha: 1) : UIColor(red: 0.886, green: 0.89, blue: 0.906, alpha: 1) }
         }
         rootStack = UIStackView()
         rootStack.axis = .vertical
@@ -114,6 +106,10 @@ final class KeyboardViewController: UIInputViewController {
             row.axis = .horizontal
             row.spacing = preferences.gap
             row.distribution = .fillEqually
+            if preferences.modernAppearance ?? true, index == rows.count - 2 {
+                row.isLayoutMarginsRelativeArrangement = true
+                row.layoutMargins = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
+            }
             if index == rows.count - 1 {
                 row.addArrangedSubview(button(symbols ? (extraSymbols ? "123" : "#+=") : "⇧", action: #selector(toggleShift), special: true))
             }
@@ -129,7 +125,7 @@ final class KeyboardViewController: UIInputViewController {
         bottom.spacing = preferences.gap
         bottom.distribution = .fill
         let symbolKey = button(symbols ? (korean ? "한" : "ABC") : "123", action: #selector(toggleSymbols), special: true)
-        symbolKey.widthAnchor.constraint(equalToConstant: 45).isActive = true
+        symbolKey.widthAnchor.constraint(equalTo: bottom.widthAnchor, multiplier: 0.145).isActive = true
         symbolKey.accessibilityLabel = symbols ? "문자 키보드로 돌아가기" : "숫자 및 특수문자"
         bottom.addArrangedSubview(symbolKey)
         let style = preferences.languageKeyStyle ?? .short
@@ -148,17 +144,21 @@ final class KeyboardViewController: UIInputViewController {
         settingsPress.minimumPressDuration = 0.6
         settingsPress.cancelsTouchesInView = true
         language.addGestureRecognizer(settingsPress)
-        language.widthAnchor.constraint(equalToConstant: 49).isActive = true
+        language.widthAnchor.constraint(equalTo: bottom.widthAnchor, multiplier: style == .full ? 0.14 : 0.10).isActive = true
         bottom.addArrangedSubview(language)
-        let comma = button(",", action: #selector(typeKey))
-        comma.widthAnchor.constraint(equalToConstant: 30).isActive = true
-        bottom.addArrangedSubview(comma)
+        if !(preferences.modernAppearance ?? true) {
+            let comma = button(",", action: #selector(typeKey))
+            comma.widthAnchor.constraint(equalToConstant: 30).isActive = true
+            bottom.addArrangedSubview(comma)
+        }
         bottom.addArrangedSubview(button("space", action: #selector(spaceKey)))
-        let period = button(".", action: #selector(typeKey))
-        period.widthAnchor.constraint(equalToConstant: 30).isActive = true
-        bottom.addArrangedSubview(period)
+        if !(preferences.modernAppearance ?? true) {
+            let period = button(".", action: #selector(typeKey))
+            period.widthAnchor.constraint(equalToConstant: 30).isActive = true
+            bottom.addArrangedSubview(period)
+        }
         let enter = button("↵", action: #selector(returnKey), special: true)
-        enter.widthAnchor.constraint(equalToConstant: 46).isActive = true
+        enter.widthAnchor.constraint(equalTo: bottom.widthAnchor, multiplier: 0.19).isActive = true
         bottom.addArrangedSubview(enter)
         rootStack.addArrangedSubview(bottom)
     }
@@ -175,26 +175,25 @@ final class KeyboardViewController: UIInputViewController {
         b.layer.cornerRadius = preferences.radius
         b.layer.cornerCurve = .continuous
         if preferences.modernAppearance ?? true {
-            b.layer.cornerRadius = max(8, preferences.radius)
+            b.layer.cornerRadius = preferences.radius
             b.restingColor = UIColor { trait in
-                if special { return trait.userInterfaceStyle == .dark ? UIColor(white: 0.24, alpha: 1) : UIColor(white: 0.76, alpha: 0.85) }
-                return trait.userInterfaceStyle == .dark ? UIColor(white: 0.34, alpha: 0.96) : UIColor(white: 1, alpha: 0.96)
+                return trait.userInterfaceStyle == .dark ? UIColor(white: 0.28, alpha: 1) : .white
             }
             b.pressedColor = .systemGray3
-            b.layer.borderWidth = 0.5
+            b.layer.borderWidth = 0
             b.layer.borderColor = UIColor.separator.withAlphaComponent(0.12).resolvedColor(with: traitCollection).cgColor
             b.layer.shadowColor = UIColor.black.cgColor
             b.layer.shadowOffset = CGSize(width: 0, height: 1)
             b.layer.shadowRadius = 0.5
-            b.layer.shadowOpacity = 0.12
-            let symbols = ["⌫": "delete.left", "⇧": shift ? "shift.fill" : "shift", "↵": "return"]
-            if let name = symbols[title] {
+            b.layer.shadowOpacity = 0
+            b.tintColor = .label
+            if let icon = KeyboardIcons.image(for: title) {
                 b.setTitle(nil, for: .normal)
-                b.setImage(UIImage(systemName: name), for: .normal)
-                b.setPreferredSymbolConfiguration(UIImage.SymbolConfiguration(pointSize: 19, weight: .regular), forImageIn: .normal)
+                b.setImage(icon, for: .normal)
                 b.accessibilityLabel = title == "⌫" ? "삭제" : (title == "⇧" ? "Shift" : "줄바꿈")
             }
-            if title == "space" { b.setTitle("스페이스", for: .normal) }
+            if title == "space" { b.setTitle(nil, for: .normal); b.accessibilityLabel = "스페이스" }
+            if title == "⇧" && shift { b.restingColor = .systemGray3 }
         } else {
             b.restingColor = b.backgroundColor ?? .secondarySystemBackground
         }

@@ -7,7 +7,6 @@ final class KeyboardKey: UIButton {
     override var isHighlighted: Bool {
         didSet {
             backgroundColor = isHighlighted ? pressedColor : restingColor
-            layer.shadowOpacity = isHighlighted ? 0 : 0.12
         }
     }
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
