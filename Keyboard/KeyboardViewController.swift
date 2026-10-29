@@ -10,6 +10,18 @@ final class KeyboardViewController: UIInputViewController {
     private var composer = HangulComposer()
     private var korean = true
     private var shift = false
+    private var symbols = false
+    private var extraSymbols = false
+    private let symbolRows = [
+        ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+        ["-", "/", ":", ";", "(", ")", "₩", "&", "@", "\""],
+        [".", ",", "?", "!", "'", "~", "_"]
+    ]
+    private let extraSymbolRows = [
+        ["[", "]", "{", "}", "#", "%", "^", "*", "+", "="],
+        ["\\", "|", "<", ">", "$", "€", "£", "¥", "•", "`"],
+        ["…", "♥", "★", "☆", "○", "●", "※"]
+    ]
     private var heightConstraint: NSLayoutConstraint?
     private let rowsKorean = [
         ["ㅂ","ㅈ","ㄷ","ㄱ","ㅅ","ㅛ","ㅕ","ㅑ","ㅐ","ㅔ"],
@@ -74,14 +86,17 @@ final class KeyboardViewController: UIInputViewController {
         stopDeleting()
         rootStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         var rows = korean ? rowsKorean : rowsEnglish
-        if preferences.numberRow { rows.insert(Array("1234567890").map(String.init), at: 0) }
+        if symbols { rows = extraSymbols ? extraSymbolRows : symbolRows }
+        if preferences.numberRow && !symbols { rows.insert(Array("1234567890").map(String.init), at: 0) }
         for (index, keys) in rows.enumerated() {
             let row = UIStackView()
             row.axis = .horizontal
             row.spacing = preferences.gap
             row.distribution = .fillEqually
-            if index == rows.count - 1 { row.addArrangedSubview(button(korean ? "⇧" : "⇧", action: #selector(toggleShift), special: true)) }
-            keys.forEach { row.addArrangedSubview(button((shift && !korean) ? $0.uppercased() : $0, action: #selector(typeKey))) }
+            if index == rows.count - 1 {
+                row.addArrangedSubview(button(symbols ? (extraSymbols ? "123" : "#+=") : "⇧", action: #selector(toggleShift), special: true))
+            }
+            keys.forEach { row.addArrangedSubview(button((shift && !korean && !symbols) ? $0.uppercased() : $0, action: #selector(typeKey))) }
             if index == rows.count - 1 { row.addArrangedSubview(button("⌫", action: #selector(deleteKey), special: true)) }
             rootStack.addArrangedSubview(row)
         }
@@ -89,6 +104,10 @@ final class KeyboardViewController: UIInputViewController {
         bottom.axis = .horizontal
         bottom.spacing = preferences.gap
         bottom.distribution = .fill
+        let symbolKey = button(symbols ? (korean ? "한" : "ABC") : "123", action: #selector(toggleSymbols), special: true)
+        symbolKey.widthAnchor.constraint(equalToConstant: 45).isActive = true
+        symbolKey.accessibilityLabel = symbols ? "문자 키보드로 돌아가기" : "숫자 및 특수문자"
+        bottom.addArrangedSubview(symbolKey)
         let style = preferences.languageKeyStyle ?? .short
         let languageTitle = style == .full ? (korean ? "영어" : "한글") : (korean ? "영" : "한")
         let language = button(languageTitle, action: #selector(toggleLanguage), special: true)
@@ -180,13 +199,30 @@ final class KeyboardViewController: UIInputViewController {
         stopDeleting()
         commitComposition()
         guard settingsHost == nil else { return }
+        // Settings need room independent of the user's compact typing height.
+        // Stay within the current window in landscape and on smaller phones.
+        let availableHeight = view.window?.bounds.height ?? UIScreen.main.bounds.height
+        let editorHeight = min(440, max(260, availableHeight * 0.65))
+        heightConstraint?.constant = editorHeight
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
         let host = UIHostingController(rootView: KeyboardSettingsView(isKeyboard: true))
-        addChild(host); host.view.frame = view.bounds; host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        view.addSubview(host.view); host.didMove(toParent: self); settingsHost = host
+        addChild(host)
+        host.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(host.view)
+        NSLayoutConstraint.activate([
+            host.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            host.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            host.view.topAnchor.constraint(equalTo: view.topAnchor, constant: 40),
+            host.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        host.didMove(toParent: self); settingsHost = host
         let close = UIButton(type: .system)
         close.setTitle("완료", for: .normal); close.frame = CGRect(x: 0, y: 0, width: 60, height: 32)
         close.backgroundColor = .systemBackground
-        close.addTarget(self, action: #selector(closeSettings), for: .touchUpInside); host.view.addSubview(close)
+        close.addTarget(self, action: #selector(closeSettings), for: .touchUpInside)
+        view.addSubview(close)
+        close.tag = 9041
     }
     @objc private func languageHeld(_ gesture: UILongPressGestureRecognizer) {
         if gesture.state == .began { openSettings() }
@@ -196,6 +232,7 @@ final class KeyboardViewController: UIInputViewController {
         return true
     }
     @objc private func closeSettings() {
+        view.viewWithTag(9041)?.removeFromSuperview()
         settingsHost?.willMove(toParent: nil); settingsHost?.view.removeFromSuperview(); settingsHost?.removeFromParent(); settingsHost = nil
         preferences = SettingsStore.load(); heightConstraint?.constant = preferences.height
         rootStack.removeFromSuperview(); setup()
@@ -207,6 +244,11 @@ final class KeyboardViewController: UIInputViewController {
 
     @objc private func typeKey(_ sender: UIButton) {
         guard let title = sender.title(for: .normal), let char = title.first else { return }
+        if symbols {
+            commitComposition()
+            textDocumentProxy.insertText(title)
+            return
+        }
         if !korean {
             commitComposition()
             textDocumentProxy.insertText(title)
@@ -230,7 +272,17 @@ final class KeyboardViewController: UIInputViewController {
             textDocumentProxy.deleteBackward(); textDocumentProxy.insertText(". ")
         } else { textDocumentProxy.insertText(" ") } }
     @objc private func returnKey() { commitComposition(); textDocumentProxy.insertText("\n") }
-    @objc private func toggleLanguage() { commitComposition(); korean.toggle(); shift = false; rebuild() }
-    @objc private func toggleShift() { shift.toggle(); rebuild() }
+    @objc private func toggleLanguage() { commitComposition(); korean.toggle(); symbols = false; shift = false; rebuild() }
+    @objc private func toggleSymbols() {
+        commitComposition()
+        symbols.toggle()
+        extraSymbols = false
+        shift = false
+        rebuild()
+    }
+    @objc private func toggleShift() {
+        if symbols { extraSymbols.toggle() } else { shift.toggle() }
+        rebuild()
+    }
     @objc private func nextKeyboard() { commitComposition(); advanceToNextInputMode() }
 }
