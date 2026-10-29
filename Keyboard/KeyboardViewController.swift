@@ -125,9 +125,9 @@ final class KeyboardViewController: UIInputViewController {
         bottom.spacing = preferences.gap
         bottom.distribution = .fill
         let symbolKey = button(symbols ? (korean ? "한" : "ABC") : "123", action: #selector(toggleSymbols), special: true)
+        bottom.addArrangedSubview(symbolKey)
         symbolKey.widthAnchor.constraint(equalTo: bottom.widthAnchor, multiplier: 0.145).isActive = true
         symbolKey.accessibilityLabel = symbols ? "문자 키보드로 돌아가기" : "숫자 및 특수문자"
-        bottom.addArrangedSubview(symbolKey)
         let style = preferences.languageKeyStyle ?? .short
         let languageTitle = style == .full ? (korean ? "영어" : "한글") : (korean ? "영" : "한")
         let language = button(languageTitle, action: #selector(toggleLanguage), special: true)
@@ -144,8 +144,8 @@ final class KeyboardViewController: UIInputViewController {
         settingsPress.minimumPressDuration = 0.6
         settingsPress.cancelsTouchesInView = true
         language.addGestureRecognizer(settingsPress)
-        language.widthAnchor.constraint(equalTo: bottom.widthAnchor, multiplier: style == .full ? 0.14 : 0.10).isActive = true
         bottom.addArrangedSubview(language)
+        language.widthAnchor.constraint(equalTo: bottom.widthAnchor, multiplier: style == .full ? 0.14 : 0.10).isActive = true
         if !(preferences.modernAppearance ?? true) {
             let comma = button(",", action: #selector(typeKey))
             comma.widthAnchor.constraint(equalToConstant: 30).isActive = true
@@ -158,8 +158,8 @@ final class KeyboardViewController: UIInputViewController {
             bottom.addArrangedSubview(period)
         }
         let enter = button("↵", action: #selector(returnKey), special: true)
-        enter.widthAnchor.constraint(equalTo: bottom.widthAnchor, multiplier: 0.19).isActive = true
         bottom.addArrangedSubview(enter)
+        enter.widthAnchor.constraint(equalTo: bottom.widthAnchor, multiplier: 0.19).isActive = true
         rootStack.addArrangedSubview(bottom)
     }
 
