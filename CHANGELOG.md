@@ -1,5 +1,19 @@
 # 변경 기록
 
+## v0.4.0 (빌드 9)
+
+- 모던 iOS 스타일 선택 추가. 기존 저장 설정에도 기본 활성화.
+- 연속 곡선 모서리, 얇은 경계, 은은한 그림자와 누름 색상 적용.
+- 삭제/Shift/줄바꿈을 SF Symbols로 변경. 스페이스 한글 표시.
+- 시스템 밝기/다크 모드에 맞는 키 색상과 키보드 배경 머티리얼 사용.
+- 투명도 줄이기 사용 시 흐림 효과 생략.
+- 앱 제목과 설정 슬라이더의 숫자 정렬 및 여백 정리.
+
+참고: https://developer.apple.com/design/human-interface-guidelines/virtual-keyboards
+https://developer.apple.com/videos/play/wwdc2025/284/
+
+시스템 키보드의 Liquid Glass와 동일한 구현은 아닙니다. iOS 16 이상 호환 UIKit 머티리얼을 사용한 사용자 정의 디자인입니다. iOS 빌드 및 화면/기기 검증 미수행.
+
 ## v0.3.0 (빌드 8)
 
 - 공개 단모음 구현과 배열을 비교해 8/8/6 단모음 배열을 기본값으로 적용.

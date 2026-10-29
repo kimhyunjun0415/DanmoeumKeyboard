@@ -22,6 +22,7 @@ struct KeyboardSettings: Codable {
     var deleteOnTouchDown: Bool? = true
     var compactLayout: Bool? = true
     var doubleTapWindow: Double? = 0.35
+    var modernAppearance: Bool? = true
 }
 
 enum SettingsStore {
@@ -85,6 +86,9 @@ struct KeyboardSettingsView: View {
                 Toggle("숫자 행", isOn: $settings.numberRow)
             }
             Section("디자인과 피드백") {
+                Toggle("모던 iOS 스타일", isOn: Binding(
+                    get: { settings.modernAppearance ?? true }, set: { settings.modernAppearance = $0 }
+                ))
                 Toggle("굵은 글씨", isOn: $settings.bold)
                 Toggle("다크 테마 (끄면 시스템 테마)", isOn: $settings.dark)
                 Toggle("진동 (기기 및 권한에 따라 제한)", isOn: $settings.haptic)
@@ -133,11 +137,22 @@ struct KeyboardSettingsView: View {
                 Text(message)
                 Button("기본값 복원", role: .destructive) { settings = KeyboardSettings(); save() }
             }
-        }.onChange(of: settingsCode) { _ in save() }
+        }
+        .formStyle(.grouped)
+        .tint(.blue)
+        .onChange(of: settingsCode) { _ in save() }
     }
     private var settingsCode: String { SettingsStore.code(settings) }
     private func save() { SettingsStore.save(settings); changed?() }
     private func slider(_ title: String, _ value: Binding<Double>, _ range: ClosedRange<Double>) -> some View {
-        VStack(alignment: .leading) { Text("\(title): \(value.wrappedValue, specifier: "%.2f")"); Slider(value: value, in: range) }
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text(value.wrappedValue, format: .number.precision(.fractionLength(2)))
+                    .monospacedDigit().foregroundStyle(.secondary)
+            }
+            Slider(value: value, in: range)
+        }.padding(.vertical, 4)
     }
 }

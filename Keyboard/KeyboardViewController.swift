@@ -41,6 +41,7 @@ final class KeyboardViewController: UIInputViewController {
         ["z", "x", "c", "v", "b", "n", "m"]
 ]
     private var rootStack: UIStackView!
+    private var backgroundMaterial: UIVisualEffectView?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -72,7 +73,20 @@ final class KeyboardViewController: UIInputViewController {
     }
 
     private func setup() {
+        backgroundMaterial?.removeFromSuperview()
+        backgroundMaterial = nil
         view.backgroundColor = UIColor { $0.userInterfaceStyle == .dark ? UIColor(white: 0.16, alpha: 1) : UIColor(red: 0.82, green: 0.84, blue: 0.88, alpha: 1) }
+        if preferences.modernAppearance ?? true {
+            view.backgroundColor = .systemGroupedBackground
+            if !UIAccessibility.isReduceTransparencyEnabled {
+                let material = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
+                material.frame = view.bounds
+                material.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                material.isUserInteractionEnabled = false
+                view.insertSubview(material, at: 0)
+                backgroundMaterial = material
+            }
+        }
         rootStack = UIStackView()
         rootStack.axis = .vertical
         rootStack.spacing = preferences.rowGap
@@ -150,7 +164,7 @@ final class KeyboardViewController: UIInputViewController {
     }
 
     private func button(_ title: String, action: Selector, special: Bool = false) -> UIButton {
-        let b = UIButton(type: .system)
+        let b = KeyboardKey(frame: .zero)
         b.setTitle(title, for: .normal)
         b.titleLabel?.font = .systemFont(ofSize: title == "space" ? 15 : preferences.font, weight: preferences.bold ? .bold : .regular)
         b.setTitleColor(.label, for: .normal)
@@ -159,6 +173,32 @@ final class KeyboardViewController: UIInputViewController {
             return trait.userInterfaceStyle == .dark ? UIColor(white: 0.35, alpha: 1) : .white
         }
         b.layer.cornerRadius = preferences.radius
+        b.layer.cornerCurve = .continuous
+        if preferences.modernAppearance ?? true {
+            b.layer.cornerRadius = max(8, preferences.radius)
+            b.restingColor = UIColor { trait in
+                if special { return trait.userInterfaceStyle == .dark ? UIColor(white: 0.24, alpha: 1) : UIColor(white: 0.76, alpha: 0.85) }
+                return trait.userInterfaceStyle == .dark ? UIColor(white: 0.34, alpha: 0.96) : UIColor(white: 1, alpha: 0.96)
+            }
+            b.pressedColor = .systemGray3
+            b.layer.borderWidth = 0.5
+            b.layer.borderColor = UIColor.separator.withAlphaComponent(0.12).resolvedColor(with: traitCollection).cgColor
+            b.layer.shadowColor = UIColor.black.cgColor
+            b.layer.shadowOffset = CGSize(width: 0, height: 1)
+            b.layer.shadowRadius = 0.5
+            b.layer.shadowOpacity = 0.12
+            let symbols = ["⌫": "delete.left", "⇧": shift ? "shift.fill" : "shift", "↵": "return"]
+            if let name = symbols[title] {
+                b.setTitle(nil, for: .normal)
+                b.setImage(UIImage(systemName: name), for: .normal)
+                b.setPreferredSymbolConfiguration(UIImage.SymbolConfiguration(pointSize: 19, weight: .regular), forImageIn: .normal)
+                b.accessibilityLabel = title == "⌫" ? "삭제" : (title == "⇧" ? "Shift" : "줄바꿈")
+            }
+            if title == "space" { b.setTitle("스페이스", for: .normal) }
+        } else {
+            b.restingColor = b.backgroundColor ?? .secondarySystemBackground
+        }
+        b.backgroundColor = b.restingColor
         b.addTarget(self, action: #selector(feedback), for: .touchDown)
         if title == "⌫" {
             b.accessibilityLabel = "삭제"
