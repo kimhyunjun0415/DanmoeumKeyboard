@@ -56,9 +56,23 @@ struct KeyboardSettingsView: View {
     @State private var settings = SettingsStore.load()
     @State private var transfer = ""
     @State private var message = ""
+    @State private var sampleText = ""
+    var isKeyboard = false
     var changed: (() -> Void)?
     var body: some View {
         Form {
+            if !isKeyboard {
+                Section("키보드 테스트") {
+                    Text("입력란을 눌러 단모음 키보드로 전환하세요. 영/한 키를 길게 눌러 설정을 바꾸고 완료를 누르면 이 입력란에서 확인할 수 있습니다.")
+                    TextField("여기에 입력해서 테스트", text: $sampleText, axis: .vertical)
+                        .lineLimit(3...5)
+                        .autocorrectionDisabled()
+                    Button("테스트 글 지우기") { sampleText = "" }
+                }
+            }
+            Section("설정 적용 안내") {
+                Text(isKeyboard ? "이 화면에서 바꾼 설정은 자동 저장됩니다. 위의 완료를 누르면 키보드에 적용됩니다." : (SettingsStore.shared == nil ? "현재 설치에서는 앱 설정이 키보드로 자동 공유되지 않습니다. 실제 키보드의 영/한 키를 길게 눌러 설정하면 바로 적용됩니다. 앱에서 만든 설정은 아래 설정 코드로 옮길 수 있습니다." : "공유 저장소를 사용합니다. 설정 변경 후 키보드를 다시 열어 확인하세요."))
+            }
             Section("크기와 간격") {
                 slider("키보드 높이", $settings.height, 180...400)
                 slider("키 가로 간격", $settings.gap, 0...12)
@@ -99,7 +113,8 @@ struct KeyboardSettingsView: View {
                 Text("반복 간격이 작을수록 빠르게 지워집니다. 손을 떼거나 키 밖으로 이동하면 멈춥니다.")
             }
             Section("설정 관리") {
-                Text(SettingsStore.shared == nil ? "현재 앱과 키보드는 각각 저장합니다. 아래 코드를 복사해 키보드 ⚙ 화면에 붙여넣고 가져오세요." : "App Group 공유 저장소 사용 중")
+                Text("버전 \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—") · 빌드 \(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—")")
+                Text(SettingsStore.shared == nil ? "앱과 키보드는 각각 저장합니다. 설정 코드를 키보드의 영/한 키를 길게 눌러 연 설정 화면에서 가져오세요." : "App Group 공유 저장소 사용 중")
                 TextField("설정 코드", text: $transfer).textInputAutocapitalization(.never).autocorrectionDisabled()
                 Button("현재 설정 코드 복사") { transfer = SettingsStore.code(settings); UIPasteboard.general.string = transfer }
                 Button("코드 가져오기") {

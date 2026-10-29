@@ -89,12 +89,6 @@ final class KeyboardViewController: UIInputViewController {
         bottom.axis = .horizontal
         bottom.spacing = preferences.gap
         bottom.distribution = .fill
-        let globe = button("🌐", action: #selector(nextKeyboard), special: true)
-        globe.widthAnchor.constraint(equalToConstant: 45).isActive = true
-        // Apple's keyboard-switching control supports long press for the full input-mode list.
-        globe.addTarget(self, action: #selector(handleInputModeList(from:with:)), for: .allTouchEvents)
-        globe.removeTarget(self, action: #selector(nextKeyboard), for: .touchUpInside)
-        bottom.addArrangedSubview(globe)
         let style = preferences.languageKeyStyle ?? .short
         let languageTitle = style == .full ? (korean ? "영어" : "한글") : (korean ? "영" : "한")
         let language = button(languageTitle, action: #selector(toggleLanguage), special: true)
@@ -185,7 +179,8 @@ final class KeyboardViewController: UIInputViewController {
     @objc private func openSettings() {
         stopDeleting()
         commitComposition()
-        let host = UIHostingController(rootView: KeyboardSettingsView())
+        guard settingsHost == nil else { return }
+        let host = UIHostingController(rootView: KeyboardSettingsView(isKeyboard: true))
         addChild(host); host.view.frame = view.bounds; host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(host.view); host.didMove(toParent: self); settingsHost = host
         let close = UIButton(type: .system)
