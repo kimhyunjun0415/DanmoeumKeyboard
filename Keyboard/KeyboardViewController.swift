@@ -95,7 +95,6 @@ final class KeyboardViewController: UIInputViewController {
         globe.addTarget(self, action: #selector(handleInputModeList(from:with:)), for: .allTouchEvents)
         globe.removeTarget(self, action: #selector(nextKeyboard), for: .touchUpInside)
         bottom.addArrangedSubview(globe)
-        bottom.addArrangedSubview(button("⚙", action: #selector(openSettings), special: true))
         let style = preferences.languageKeyStyle ?? .short
         let languageTitle = style == .full ? (korean ? "영어" : "한글") : (korean ? "영" : "한")
         let language = button(languageTitle, action: #selector(toggleLanguage), special: true)
@@ -104,6 +103,14 @@ final class KeyboardViewController: UIInputViewController {
             language.setImage(UIImage(systemName: "character.bubble"), for: .normal)
         }
         language.accessibilityLabel = korean ? "영어로 전환" : "한글로 전환"
+        language.accessibilityHint = "길게 누르면 키보드 설정이 열립니다"
+        language.accessibilityCustomActions = [
+            UIAccessibilityCustomAction(name: "키보드 설정 열기", target: self, selector: #selector(openSettingsAccessibly))
+        ]
+        let settingsPress = UILongPressGestureRecognizer(target: self, action: #selector(languageHeld(_:)))
+        settingsPress.minimumPressDuration = 0.6
+        settingsPress.cancelsTouchesInView = true
+        language.addGestureRecognizer(settingsPress)
         language.widthAnchor.constraint(equalToConstant: 49).isActive = true
         bottom.addArrangedSubview(language)
         let comma = button(",", action: #selector(typeKey))
@@ -185,6 +192,13 @@ final class KeyboardViewController: UIInputViewController {
         close.setTitle("완료", for: .normal); close.frame = CGRect(x: 0, y: 0, width: 60, height: 32)
         close.backgroundColor = .systemBackground
         close.addTarget(self, action: #selector(closeSettings), for: .touchUpInside); host.view.addSubview(close)
+    }
+    @objc private func languageHeld(_ gesture: UILongPressGestureRecognizer) {
+        if gesture.state == .began { openSettings() }
+    }
+    @objc private func openSettingsAccessibly() -> Bool {
+        openSettings()
+        return true
     }
     @objc private func closeSettings() {
         settingsHost?.willMove(toParent: nil); settingsHost?.view.removeFromSuperview(); settingsHost?.removeFromParent(); settingsHost = nil
