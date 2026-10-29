@@ -20,6 +20,8 @@ struct KeyboardSettings: Codable {
     // Optional fields keep settings saved by earlier versions readable.
     var languageKeyStyle: LanguageKeyStyle? = .short
     var deleteOnTouchDown: Bool? = true
+    var compactLayout: Bool? = true
+    var doubleTapWindow: Double? = 0.35
 }
 
 enum SettingsStore {
@@ -89,6 +91,13 @@ struct KeyboardSettingsView: View {
                 Toggle("입력 소리 (시스템 설정에 따름)", isOn: $settings.sound)
             }
             Section("입력") {
+                Toggle("단모음 배열 (끄면 두벌식)", isOn: Binding(
+                    get: { settings.compactLayout ?? true }, set: { settings.compactLayout = $0 }
+                ))
+                slider("같은 키 연타 조합 시간 (초)", Binding(
+                    get: { settings.doubleTapWindow ?? 0.35 }, set: { settings.doubleTapWindow = $0 }
+                ), 0.15...0.8)
+                Text("단모음: ㄱ 두 번 → ㄲ, ㅏ 두 번 → ㅑ. 느리게 누르면 분리합니다. 받침 뒤 같은 자음은 다음 글자로 넘겨 학교가 하꾜로 바뀌지 않게 합니다.")
                 Picker("언어 전환 키 표시", selection: Binding(
                     get: { settings.languageKeyStyle ?? .short },
                     set: { settings.languageKeyStyle = $0 }

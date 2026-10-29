@@ -8,10 +8,17 @@ final class KeyboardViewController: UIInputViewController {
     private var deletedDuringPress = false
     private var settingsHost: UIViewController?
     private var composer = HangulComposer()
+    private var lastInputTime = Date.distantPast
     private var korean = true
     private var shift = false
     private var symbols = false
     private var extraSymbols = false
+    private let shiftedKorean = ["ㅂ": "ㅃ", "ㅈ": "ㅉ", "ㄷ": "ㄸ", "ㄱ": "ㄲ", "ㅅ": "ㅆ", "ㅐ": "ㅒ", "ㅔ": "ㅖ", "ㅗ": "ㅛ", "ㅓ": "ㅕ", "ㅏ": "ㅑ", "ㅜ": "ㅠ"]
+    private let compactRows = [
+        ["ㅂ", "ㅈ", "ㄷ", "ㄱ", "ㅅ", "ㅗ", "ㅐ", "ㅔ"],
+        ["ㅁ", "ㄴ", "ㅇ", "ㄹ", "ㅎ", "ㅓ", "ㅏ", "ㅣ"],
+        ["ㅋ", "ㅌ", "ㅊ", "ㅍ", "ㅜ", "ㅡ"]
+    ]
     private let symbolRows = [
         ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
         ["-", "/", ":", ";", "(", ")", "₩", "&", "@", "\""],
@@ -85,7 +92,7 @@ final class KeyboardViewController: UIInputViewController {
     private func rebuild() {
         stopDeleting()
         rootStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        var rows = korean ? rowsKorean : rowsEnglish
+        var rows = korean ? ((preferences.compactLayout ?? true) ? compactRows : rowsKorean) : rowsEnglish
         if symbols { rows = extraSymbols ? extraSymbolRows : symbolRows }
         if preferences.numberRow && !symbols { rows.insert(Array("1234567890").map(String.init), at: 0) }
         for (index, keys) in rows.enumerated() {
@@ -96,7 +103,10 @@ final class KeyboardViewController: UIInputViewController {
             if index == rows.count - 1 {
                 row.addArrangedSubview(button(symbols ? (extraSymbols ? "123" : "#+=") : "⇧", action: #selector(toggleShift), special: true))
             }
-            keys.forEach { row.addArrangedSubview(button((shift && !korean && !symbols) ? $0.uppercased() : $0, action: #selector(typeKey))) }
+            keys.forEach { key in
+                let title = shift && !symbols ? (korean ? (shiftedKorean[key] ?? key) : key.uppercased()) : key
+                row.addArrangedSubview(button(title, action: #selector(typeKey)))
+            }
             if index == rows.count - 1 { row.addArrangedSubview(button("⌫", action: #selector(deleteKey), special: true)) }
             rootStack.addArrangedSubview(row)
         }
@@ -240,6 +250,7 @@ final class KeyboardViewController: UIInputViewController {
     private func commitComposition() {
         // Composition already exists in the document proxy; only reset local state.
         composer = HangulComposer()
+        lastInputTime = .distantPast
     }
 
     @objc private func typeKey(_ sender: UIButton) {
@@ -255,9 +266,14 @@ final class KeyboardViewController: UIInputViewController {
             if shift { shift = false; rebuild() }
             return
         }
+        let now = Date()
+        composer.danmoeum = preferences.compactLayout ?? true
+        composer.allowDoubleTap = now.timeIntervalSince(lastInputTime) <= (preferences.doubleTapWindow ?? 0.35)
+        lastInputTime = now
         let edit = composer.takeInput(char)
         for _ in 0..<edit.0 { textDocumentProxy.deleteBackward() }
         textDocumentProxy.insertText(edit.1)
+        if shift { shift = false; rebuild() }
     }
 
     @objc private func deleteKey() {
