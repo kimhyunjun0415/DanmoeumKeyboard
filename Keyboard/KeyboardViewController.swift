@@ -10,11 +10,11 @@ final class KeyboardViewController: UIInputViewController {
         ["ㅁ","ㄴ","ㅇ","ㄹ","ㅎ","ㅗ","ㅓ","ㅏ","ㅣ"],
         ["ㅋ","ㅌ","ㅊ","ㅍ","ㅠ","ㅜ","ㅡ"]
     ]
-    private let rowsEnglish = [
-        Array("qwertyuiop").map(String.init),
-        Array("asdfghjkl").map(String.init),
-        Array("zxcvbnm").map(String.init)
-    ]
+   private let rowsEnglish: [[String]] = [
+        ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
+        ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
+        ["z", "x", "c", "v", "b", "n", "m"]
+]
     private var rootStack: UIStackView!
 
     override func viewDidLoad() {
