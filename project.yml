@@ -21,7 +21,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.example.danmoeum
     dependencies:
       - target: DanmoeumExtension
-  DanmoeumExtension:
+    DanmoeumExtension:
     type: app-extension
     platform: iOS
     sources:
@@ -29,6 +29,18 @@ targets:
       - path: Shared
     info:
       path: Keyboard/Info.plist
+      properties:
+        CFBundleDisplayName: 단모음
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.keyboard-service
+          NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).KeyboardViewController"
+          NSExtensionAttributes:
+            IsASCIICapable: false
+            PrefersRightToLeft: false
+            PrimaryLanguage: ko-KR
+            RequestsOpenAccess: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.example.danmoeum.keyboard
