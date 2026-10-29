@@ -3,30 +3,29 @@ name: iOS Keyboard Build
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   build:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show Xcode version
-        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: brew install xcodegen
 
-      - name: Find Xcode projects
-        run: |
-          find . -name "*.xcodeproj" -o -name "*.xcworkspace"
+      - name: Generate Xcode Project
+        run: xcodegen generate
 
-      - name: Build iOS project
+      - name: Build iOS Keyboard
         run: |
           xcodebuild \
             -project DanmoeumKeyboard.xcodeproj \
             -scheme DanmoeumKeyboard \
             -configuration Debug \
             -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             build
