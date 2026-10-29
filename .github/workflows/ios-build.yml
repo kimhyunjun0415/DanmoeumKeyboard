@@ -1,0 +1,32 @@
+name: iOS Keyboard Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Find Xcode projects
+        run: |
+          find . -name "*.xcodeproj" -o -name "*.xcworkspace"
+
+      - name: Build iOS project
+        run: |
+          xcodebuild \
+            -project DanmoeumKeyboard.xcodeproj \
+            -scheme DanmoeumKeyboard \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            CODE_SIGNING_ALLOWED=NO \
+            build
